@@ -9,6 +9,10 @@ export default Ember.TextField.extend({
   attributeBindings: ['type'],
   type: 'tel',
 
+  focusIn: function(){
+    this.toggleProperty('refreshNumber');
+  },
+
   /**
    * When `autoFormat` is enabled, this option will support formatting
    * extension numbers e.g. "+1 (702) 123-1234 ext. 12345".
@@ -62,14 +66,14 @@ export default Ember.TextField.extend({
    * [jquery-cookie](https://github.com/carhartl/jquery-cookie) plugin, it
    * will store the loaded country code in a cookie for future use.**
    *
-   * @property defaultCountry
+   * @property initialCountry
    * @type String
    * @default ""
    */
-  defaultCountry: '',
+  initialCountry: '',
 
   /**
-   * When setting `defaultCountry` to `"auto"`, we need to use a special
+   * When setting `initialCountry` to `"auto"`, we need to use a special
    * service to lookup the location data for the user. Write a custom method to
    * get the country code.
    *
@@ -249,6 +253,22 @@ export default Ember.TextField.extend({
   }),
 
   /**
+   * Change the country selection (e.g. when the user is entering their
+   * address).
+   *
+   * @property setCountry
+   * @type String
+   */
+  setCountry: Ember.computed({
+    get() { /* no-op */ },
+    set(key, newValue) {
+      if(this.$() && this.$().intlTelInput && newValue){
+        return this.$().intlTelInput("setCountry", newValue);
+      }
+    }
+  }),
+
+  /**
    * Get more information about a validation error. Requires the utilities
    * scripts.
    *
@@ -295,12 +315,35 @@ export default Ember.TextField.extend({
     // let Ember be aware of the changes
     this.$().change(notifyPropertyChange);
 
+    // PEDROOOOOOOOO
+    var countryData = $.fn.intlTelInput.getCountryData();
+    var self = this;
+
+    $.each(countryData, function(i, country) {
+      var custom_country = self.get('countriesData').findBy('alpha2', country.iso2.toUpperCase());
+      if(custom_country){
+        country.name = custom_country.name
+      }
+    });
+
+    function compare(a,b) {
+      if (a.name < b.name)
+        return -1;
+      if (a.name > b.name)
+        return 1;
+      return 0;
+    }
+
+    countryData.sort(compare);
+    // PEDROOOOOOOOO
+
+
     this.$().intlTelInput({
       allowExtensions: this.get('allowExtensions'),
       autoFormat: this.get('autoFormat'),
       autoHideDialCode: this.get('autoHideDialCode'),
       autoPlaceholder: this.get('autoPlaceholder'),
-      defaultCountry: this.get('defaultCountry'),
+      initialCountry: this.get('initialCountry'),
       geoIpLookup: this.get('geoIpLookup'),
       nationalMode: this.get('nationalMode'),
       numberType: this.get('numberType'),
