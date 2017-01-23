@@ -320,7 +320,7 @@ export default Ember.TextField.extend({
     var self = this;
 
     $.each(countryData, function(i, country) {
-      var custom_country = self.get('countriesData').findBy('alpha2', country.iso2.toUpperCase());
+      var custom_country = self.get('countriesData').findBy('id', country.iso2.toUpperCase());
       if(custom_country){
         country.name = custom_country.name
       }
